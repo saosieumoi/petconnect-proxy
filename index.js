@@ -5,7 +5,7 @@ import pkg from '@shopify/shopify-api';
 import jwt from 'jsonwebtoken';                // <-- thêm
 
 const { shopifyApi, LATEST_API_VERSION } = pkg;
-const { SHOP, API_KEY, API_SECRET_KEY, ADMIN_TOKEN } = process.env;
+const { SHOP, HOST_NAME, API_KEY, API_SECRET_KEY, ADMIN_TOKEN } = process.env;
 
 const app = express();
 app.use(cors());
@@ -16,6 +16,7 @@ const shopify = shopifyApi({
   apiKey: API_KEY,
   apiSecretKey: API_SECRET_KEY,
   scopes: ['write_customers'],
+  hostName: HOST_NAME,
   isEmbeddedApp: true,
   apiVersion: LATEST_API_VERSION
 });
