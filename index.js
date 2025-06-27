@@ -27,7 +27,7 @@ app.post('/update-pet', verifyJWT, async (req, res) => {
         metaobjectCreate(handle: null, type:$def, fields:$fields){ metaobject{ id } } }`,
         variables:{
           def:"pet",
-          fields:Object.entries(pets).map(([k,v])=>({ key:k, value:v?.toString() }))
+          fields:Object.entries(pets).map(([k,v])=>({ key:k, value:v?.toString() }))}
         }
     });
     petId = metaobject.id;
@@ -38,7 +38,7 @@ app.post('/update-pet', verifyJWT, async (req, res) => {
         metafieldsSet(metafields:[{ownerId:$id,namespace:"pets",key:"profiles",
           type:"list.metaobject_reference", value: $val }]){
           userErrors{message} } }`,
-        variables:{ id:customerId, val:JSON.stringify(list) }
+        variables:{ id:customerId, val:JSON.stringify(list) }}
     });
   } else {
     /* update */
@@ -47,7 +47,7 @@ app.post('/update-pet', verifyJWT, async (req, res) => {
         metaobjectUpdate(id:$id, fields:$fields){ userErrors{message} } }`,
         variables:{
           id:petId,
-          fields:Object.entries(pets).map(([k,v])=>({ key:k, value:v?.toString() }))
+          fields:Object.entries(pets).map(([k,v])=>({ key:k, value:v?.toString() }))}
         }
     });
   }
