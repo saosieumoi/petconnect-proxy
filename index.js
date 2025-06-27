@@ -1,63 +1,64 @@
 import '@shopify/shopify-api/adapters/node';
 import 'dotenv/config';
 import express from 'express';
-import cors from 'cors';
-import pkg from '@shopify/shopify-api';
-import jwt from 'jsonwebtoken';               
+import cors    from 'cors';
+import jwt     from 'jsonwebtoken';
+import { shopifyApi, LATEST_API_VERSION } from '@shopify/shopify-api';
 
+const { HOSTNAME, API_KEY, API_SECRET_KEY, ADMIN_TOKEN } = process.env;
+
+/* 1 — Khởi tạo Shopify SDK */
+const shopify = shopifyApi({
+  apiKey: API_KEY,
+  apiSecretKey: API_SECRET_KEY,
+  hostName: HOSTNAME,
+  scopes: ['write_customers'],
+  isEmbeddedApp: false,
+  apiVersion: LATEST_API_VERSION
+});
+
+/* 2 — Tạo app Express (phải đứng TRƯỚC khi dùng) */
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+/* 3 — Middleware xác thực JWT */
+function verifyJWT(req, res, next) {
+  const token = (req.headers.authorization || '').replace('Bearer ', '');
+  try {
+    req.jwtPayload = jwt.verify(token, API_SECRET_KEY);   // ghi vào request
+    next();
+  } catch {
+    res.status(401).json({ ok: false, error: 'Bad JWT' });
+  }
+}
+
+/* 4 — Route ghi Pet metaobject/metafield */
 app.post('/update-pet', verifyJWT, async (req, res) => {
-  const { customerId, pets } = req.body;      // pets = {name, breed, ...}
+  const customerId = req.jwtPayload.sub;         // gid://shopify/Customer/…
+  const pets = req.body.pets || {};
 
-  const gql = new shopify.clients.Graphql({ hostName: HOSTNAME, accessToken: ADMIN_TOKEN });
+  const metafields = Object.entries(pets).map(([k, v]) => ({
+    namespace: 'pets',
+    key: k,
+    type: k === 'age_month' ? 'number_integer'
+         : k === 'weight'   ? 'number_decimal'
+         : 'single_line_text_field',
+    value: v.toString()
+  }));
 
-  /* 1) Fetch current list reference */
-  const { data } = await gql.query({
-    data:{ query:`query($id:ID!){
-      customer(id:$id){ metafield(namespace:"pets",key:"profiles"){ value }}
-    }`, variables:{ id: customerId }}
+  const g = new shopify.clients.Graphql({ shop: SHOP, accessToken: ADMIN_TOKEN });
+  await g.query({
+    data: {
+      query: `mutation ($id:ID!,$m:[MetafieldsSetInput!]!){
+        metafieldsSet(ownerId:$id,metafields:$m){ userErrors{message} } }`,
+      variables: { id: customerId, m: metafields }
+    }
   });
 
-  const list = JSON.parse(data.customer.metafield?.value || '[]');
-  let petId   = list[0];                       // hiện chỉ làm việc với slot #1
-
-  /* 2) Create hoặc Update metaobject */
-  if (!petId) {
-    const { data:{ metaobjectCreate:{ metaobject } } } = await gql.query({
-      data:{ query:`mutation($def:String!,$fields:[MetaobjectFieldInput!]!){
-        metaobjectCreate(handle: null, type:$def, fields:$fields){ metaobject{ id } } }`,
-        variables:{
-          def:"pet",
-          fields:Object.entries(pets).map(([k,v])=>({ key:k, value:v?.toString() }))}
-        }
-    });
-    petId = metaobject.id;
-    /* 2b) push id vào list profiles */
-    list.unshift(petId);
-    await gql.query({
-      data:{ query:`mutation($id:ID!, $val: [ID!]!){
-        metafieldsSet(metafields:[{ownerId:$id,namespace:"pets",key:"profiles",
-          type:"list.metaobject_reference", value: $val }]){
-          userErrors{message} } }`,
-        variables:{ id:customerId, val:JSON.stringify(list) }}
-    });
-  } else {
-    /* update */
-    await gql.query({
-      data:{ query:`mutation($id:ID!, $fields:[MetaobjectFieldInput!]!){
-        metaobjectUpdate(id:$id, fields:$fields){ userErrors{message} } }`,
-        variables:{
-          id:petId,
-          fields:Object.entries(pets).map(([k,v])=>({ key:k, value:v?.toString() }))}
-        }
-    });
-  }
-
-  res.json({ ok:true, petId });
+  res.json({ ok: true });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('PetConnect API up on ' + PORT));
+/* 5 — Lắng cổng */
+app.listen(process.env.PORT || 3000, () =>
+  console.log('PetConnect API listening'));
