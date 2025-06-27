@@ -3,7 +3,11 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import pkg from '@shopify/shopify-api';
-import jwt from 'jsonwebtoken';                // <-- thêm
+import jwt from 'jsonwebtoken';               
+
+const app = express();
+app.use(cors());
+app.use(express.json());
 
 app.post('/update-pet', verifyJWT, async (req, res) => {
   const { customerId, pets } = req.body;      // pets = {name, breed, ...}
