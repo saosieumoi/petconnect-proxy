@@ -42,7 +42,7 @@ app.post('/update', verifyProxy, async (req, res) => {
     value: v.toString()
   }));
 
-  const g = new shopify.clients.Graphql({ shop: SHOP, accessToken: ADMIN_TOKEN });
+  const g = new shopify.clients.Graphql({ hostName: HOSTNAME, accessToken: ADMIN_TOKEN });
   await g.query({
     data:{ query:`mutation($id:ID!,$m:[MetafieldsSetInput!]!){
       metafieldsSet(ownerId:$id,metafields:$m){userErrors{message}}}`,
