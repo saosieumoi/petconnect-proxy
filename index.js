@@ -31,6 +31,8 @@ function verifyProxy(req, res, next) {
   return next();
 }
 
+app.get('/update', (_, res) => res.send('PetConnect proxy endpoint – POST only.'));
+
 /* ---------- Proxy endpoint ---------- */
 app.post('/update', verifyProxy, async (req, res) => {
   const { shop, customerId } = req.query;              // lấy từ URL của form
