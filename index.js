@@ -3,7 +3,8 @@ import 'dotenv/config';
 import express from 'express';
 import crypto from 'crypto';
 import fetch from 'node-fetch';
-import { utils } from '@shopify/shopify-api';
+import shopifyPkg from '@shopify/shopify-api';
+const { utils } = shopifyPkg;
 
 const { API_SECRET_KEY, ADMIN_TOKEN } = process.env;
 const app = express();
