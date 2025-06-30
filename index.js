@@ -52,6 +52,19 @@ app.post('/update', verifyProxy, async (req, res) => {
       }
     );
 
+    try {
+    const rsp = await fetch(
+      `https://${shop}/admin/api/2025-04/customers/${customerId}/metafields/set.json`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Access-Token': ADMIN_TOKEN
+        },
+        body: JSON.stringify({ metafields })
+      }
+    );
+
     if (!rsp.ok) {
       const errorText = await rsp.text();
       console.error('Admin API error:', errorText);
