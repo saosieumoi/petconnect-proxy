@@ -13,11 +13,22 @@ app.use(express.urlencoded({ extended: true }));
 
 // ✅ Middleware: verify App Proxy signature from query string
 function verifyProxy(req, res, next) {
-  const isValid = utils.validateHmac(req.query, API_SECRET_KEY);
-  if (!isValid) {
-    console.warn('❌ Invalid App Proxy signature:', req.query);
-    return res.status(401).send('Unauthorized: bad signature');
+  const { signature, ...rest } = req.query;
+  const sortedQuery = Object.keys(rest)
+    .sort()
+    .map(k => `${k}=${rest[k]}`)
+    .join('&');
+
+  const digest = crypto
+    .createHmac('sha256', API_SECRET_KEY)
+    .update(sortedQuery)
+    .digest('hex');
+
+  if (digest !== signature) {
+    console.warn('❌ Invalid App Proxy signature');
+    return res.status(401).send('Invalid signature');
   }
+
   next();
 }
 
