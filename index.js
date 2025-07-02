@@ -34,7 +34,7 @@ app.post('/update', verifyProxy, async (req, res) => {
 
   try {
     const rsp = await fetch(
-      `https://${shop}/admin/api/2024-10/customers/${customerId}/metafields/set.json`,
+      `https://${shop}/admin/api/2025-04/customers/${customerId}/metafields/set.json`,
       {
         method: 'POST',
         headers: {
