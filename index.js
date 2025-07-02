@@ -23,6 +23,11 @@ function verifyProxy(req, res, next) {
 }
 
 app.post('/update', verifyProxy, async (req, res) => {
+  console.log('▶️ Proxy /update called');
+  console.log('Headers:', req.headers);
+  console.log('Original URL:', req.originalUrl);
+  console.log('Body:', req.body);
+  
   const { shop, customerId } = req.query;
   const { name, breed, play_style } = req.body;
 
@@ -44,9 +49,6 @@ app.post('/update', verifyProxy, async (req, res) => {
         body: JSON.stringify({ metafields })
       }
     );
-
-    console.log('Incoming headers:', req.headers);
-    console.log('Original URL:', req.originalUrl);
 
     if (!rsp.ok) {
       console.error(await rsp.text());
