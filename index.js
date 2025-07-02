@@ -9,6 +9,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Verify HMAC from Shopify App Proxy
 function verifyProxy(req, res, next) {
+  console.log('▶️ Proxy /update called');
+  console.log('Headers:', req.headers);
+  console.log('Original URL:', req.originalUrl);
+  console.log('Body:', req.body);
+  
   const sig = req.get('x-shopify-proxy-signature');
   if (!sig) return res.status(401).send('Missing signature');
 
