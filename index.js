@@ -14,16 +14,15 @@ function verifyProxy(req, res, next) {
   console.log('Original URL:', req.originalUrl);
   console.log('Body:', req.body);
   
-  const sig = req.get('x-shopify-proxy-signature');
-  if (!sig) return res.status(401).send('Missing signature');
+  const url = req.originalUrl.split('?')[1];
+  const params = new URLSearchParams(url);
+  const signature = params.get('signature');
+  params.delete('signature');
 
-  const sorted = Object.keys(req.query).sort().map(k => `${k}=${req.query[k]}`).join('&');
-  const msg = `${req.path}?${sorted}`;
-  const digest = crypto.createHmac('sha256', API_SECRET_KEY).update(msg).digest('base64');
+  const sorted = [...params.entries()].sort().map(([k, v]) => `${k}=${v}`).join('&');
+  const computed = crypto.createHmac('sha256', API_SECRET_KEY).update(sorted).digest('hex');
 
-  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(digest)))
-    return res.status(401).send('Bad signature');
-
+  if (computed !== signature) return res.status(401).send('Missing or invalid signature');
   return next();
 }
 
